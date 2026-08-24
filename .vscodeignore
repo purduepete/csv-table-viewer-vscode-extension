@@ -1,0 +1,8 @@
+.git/
+.gitignore
+.vscodeignore
+dist/
+test/
+scripts/
+*.test.js
+PROMPT.md

@@ -1,0 +1,66 @@
+{
+    "name": "csv-table-viewer",
+    "displayName": "CSV Table Viewer",
+    "description": "Open CSV and TSV files as searchable, sortable tables in VS Code.",
+    "version": "0.1.1",
+    "publisher": "lerxst",
+    "icon": "images/icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/purduepete/csv-table-viewer-vscode-extension.git"
+    },
+    "bugs": {
+        "url": "https://github.com/purduepete/csv-table-viewer-vscode-extension/issues"
+    },
+    "homepage": "https://github.com/purduepete/csv-table-viewer-vscode-extension#readme",
+    "engines": {
+        "vscode": "^1.95.0"
+    },
+    "categories": [
+        "Visualization",
+        "Data Science"
+    ],
+    "main": "./extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "csvTableViewer.open",
+                "title": "Open as CSV Table"
+            },
+            {
+                "command": "csvTableViewer.openText",
+                "title": "Open CSV as Text"
+            }
+        ],
+        "customEditors": [
+            {
+                "viewType": "csvTableViewer.table",
+                "displayName": "CSV Table",
+                "selector": [
+                    {
+                        "filenamePattern": "*.csv"
+                    },
+                    {
+                        "filenamePattern": "*.tsv"
+                    }
+                ],
+                "priority": "default"
+            }
+        ]
+    },
+    "scripts": {
+        "test": "node --test",
+        "build:icon": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Build-Icon.ps1",
+        "prepackage": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force dist | Out-Null\"",
+        "package": "vsce package --allow-missing-repository --out dist/csv-table-viewer.vsix",
+        "install:local": "powershell -ExecutionPolicy Bypass -File .\\scripts\\Install-Extension.ps1"
+    },
+    "dependencies": {
+        "papaparse": "5.5.3"
+    },
+    "devDependencies": {
+        "@vscode/vsce": "3.6.2"
+    },
+    "license": "MIT",
+    "private": true
+}
