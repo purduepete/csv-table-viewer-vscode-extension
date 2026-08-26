@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
     clampColumnWidth,
+    clearColumnSelection,
     filterRows,
     getDistinctValues,
     getVirtualWindow,
@@ -58,6 +59,19 @@ test('select all keeps only values matching the checklist search', () => {
     assert.deepEqual([...selectAllMatchingValues(['Alpha', 'alpha'], true)], ['Alpha', 'alpha']);
     assert.deepEqual([...selectAllMatchingValues(['Alpha', 'alpha'], false)], []);
     assert.deepEqual([...selectAllMatchingValues([], true)], []);
+});
+
+test('clears only the requested column selection without mutating the input', () => {
+    const selections = new Map([
+        ['name', new Set(['Alpha'])],
+        ['quantity', new Set(['2'])],
+    ]);
+
+    const cleared = clearColumnSelection(selections, 'name');
+
+    assert.deepEqual([...cleared.keys()], ['quantity']);
+    assert.deepEqual([...cleared.get('quantity')], ['2']);
+    assert.deepEqual([...selections.keys()], ['name', 'quantity']);
 });
 
 test('sort is stable and none restores source order', () => {

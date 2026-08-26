@@ -330,11 +330,21 @@ td:last-child {
     font-size: 12px;
 }
 
+.column-filter-menu-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+}
+
 .column-filter-menu-footer button {
     color: var(--vscode-button-secondaryForeground);
     border: 0;
     border-radius: 0;
     background: var(--vscode-button-secondaryBackground);
+}
+
+.column-filter-menu-footer button:disabled {
+    opacity: 0.45;
 }
 
 .sort-button:hover {

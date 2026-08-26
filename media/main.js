@@ -43,6 +43,7 @@
     const selectAllValues = document.getElementById('select-all-values');
     const columnValueList = document.getElementById('column-value-list');
     const columnValueStatus = document.getElementById('column-value-status');
+    const clearColumnFilter = document.getElementById('clear-column-filter');
     const loadMoreValues = document.getElementById('load-more-values');
 
     function setNotice(text, kind = 'info') {
@@ -315,6 +316,7 @@
         selectAllValues.disabled = matchingValues.length === 0;
         selectAllValues.checked = isExactMatch;
         selectAllValues.indeterminate = !isExactMatch && effectiveSelection.size > 0;
+        clearColumnFilter.disabled = !state.columnSelections.has(state.activeFilter.column.key);
     }
 
     function updateFilterButton() {
@@ -354,6 +356,7 @@
         const button = state.activeFilter.button;
         button.setAttribute('aria-expanded', 'false');
         state.activeFilter = null;
+        clearColumnFilter.disabled = true;
         columnFilterMenu.hidden = true;
         if (restoreFocus) button.focus();
     }
@@ -369,6 +372,14 @@
         updateFilterButton();
         renderColumnValues();
         applyView();
+    });
+    clearColumnFilter.addEventListener('click', () => {
+        if (!state.activeFilter) return;
+        state.columnSelections = model.clearColumnSelection(state.columnSelections, state.activeFilter.column.key);
+        updateFilterButton();
+        renderColumnValues();
+        applyView();
+        columnValueSearch.focus();
     });
     loadMoreValues.addEventListener('click', () => {
         state.visibleValueCount += VALUE_BATCH_SIZE;

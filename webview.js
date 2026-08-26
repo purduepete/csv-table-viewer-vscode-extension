@@ -67,7 +67,10 @@ function getWebviewHtml(webview, extensionUri) {
             <div id="column-value-list" class="column-value-list"></div>
             <footer class="column-filter-menu-footer">
                 <span id="column-value-status"></span>
-                <button id="load-more-values" type="button" hidden>Show more</button>
+                <div class="column-filter-menu-actions">
+                    <button id="clear-column-filter" type="button" title="Clear this column's filter" aria-label="Clear this column's filter" disabled>Clear filter</button>
+                    <button id="load-more-values" type="button" hidden>Show more</button>
+                </div>
             </footer>
         </section>
         <footer id="status" class="status" aria-live="polite">Loading...</footer>

@@ -7,6 +7,8 @@ Open CSV and TSV files as read-only, searchable tables in VS Code.
 - Opens `.csv` and `.tsv` files in the table editor by default.
 - Filters across every displayed cell.
 - Filters individual columns by checking values from each column's distinct-value list.
+- Clears the open column's filter without changing the global search or filters on other columns.
+- Clears all active filters from the table toolbar.
 - Select all in a searched value list selects only the matching values and deselects the rest.
 - Sorts columns through unsorted, ascending, and descending states.
 - Resizes columns by dragging a header edge, with arrow-key adjustment and double-click reset.

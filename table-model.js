@@ -32,6 +32,12 @@ function selectAllMatchingValues(matchingValues, checked) {
     return checked ? new Set(matchingValues) : new Set();
 }
 
+function clearColumnSelection(columnSelections, columnKey) {
+    const next = new Map(columnSelections);
+    next.delete(columnKey);
+    return next;
+}
+
 function sortRows(
     rows,
     columnIndex,
@@ -72,6 +78,7 @@ function getVirtualWindow({ rowCount, rowHeight, scrollTop, viewportHeight, over
 
 const api = {
     clampColumnWidth,
+    clearColumnSelection,
     filterRows,
     getDistinctValues,
     getVirtualWindow,

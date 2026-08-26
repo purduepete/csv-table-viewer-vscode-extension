@@ -47,4 +47,5 @@ test('webview uses strict CSP and packaged resources', () => {
     assert.match(html, /id="column-filter-menu"/);
     assert.match(html, /id="select-all-values"/);
     assert.match(html, /aria-label="Clear all filters"/);
+    assert.match(html, /id="clear-column-filter"[^>]*aria-label="Clear this column's filter"[^>]*disabled/);
 });

@@ -1,8 +1,8 @@
 {
-    "name": "csv-table-viewer",
-    "displayName": "CSV Table Viewer",
+    "name": "csv-table-viewer-vscode",
+    "displayName": "CSV Table Viewer: Search & Sort",
     "description": "Open CSV and TSV files as searchable, sortable tables in VS Code.",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "publisher": "lerxst",
     "icon": "images/icon.png",
     "repository": {
@@ -53,7 +53,7 @@
         "build:icon": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Build-Icon.ps1",
         "prepackage": "powershell -NoProfile -Command \"New-Item -ItemType Directory -Force dist | Out-Null\"",
         "package": "vsce package --allow-missing-repository --out dist/csv-table-viewer.vsix",
-        "install:local": "powershell -ExecutionPolicy Bypass -File .\\scripts\\Install-Extension.ps1"
+        "install:local": "npm run package && powershell -NoProfile -ExecutionPolicy Bypass -File .\\scripts\\Install-Extension.ps1"
     },
     "dependencies": {
         "papaparse": "5.5.3"
