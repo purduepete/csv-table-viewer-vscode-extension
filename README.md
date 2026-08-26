@@ -36,7 +36,8 @@ Requirements: Node.js 20 or later, npm, PowerShell, and the `code` command on `P
 .\scripts\Install-Extension.ps1
 ```
 
-Reload VS Code after installing. The packaged extension is written to `dist\csv-table-viewer.vsix`.
+Reload VS Code after installing. The packaged extension is written to
+`dist\csv-table-viewer-vscode-0.1.3.vsix`.
 
 ## Development
 
