@@ -2,7 +2,7 @@
     "name": "csv-table-viewer-vscode",
     "displayName": "CSV Table Viewer: Search & Sort",
     "description": "Open CSV and TSV files as searchable, sortable tables in VS Code.",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "publisher": "lerxst",
     "icon": "images/icon.png",
     "repository": {

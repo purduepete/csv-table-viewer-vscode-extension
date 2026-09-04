@@ -76,14 +76,94 @@ function getVirtualWindow({ rowCount, rowHeight, scrollTop, viewportHeight, over
     };
 }
 
+function serializeViewState({
+    query = '',
+    columnSelections = new Map(),
+    sortColumnKey = '',
+    sortDirection = 'none',
+    columnWidths = new Map(),
+} = {}) {
+    const serializedSelections = {};
+    for (const [key, set] of columnSelections) {
+        if (set instanceof Set && set.size > 0) {
+            serializedSelections[key] = [...set];
+        } else if (Array.isArray(set) && set.length > 0) {
+            serializedSelections[key] = [...set];
+        }
+    }
+
+    const serializedWidths = {};
+    for (const [key, width] of columnWidths) {
+        if (typeof width === 'number' && Number.isFinite(width)) {
+            serializedWidths[key] = clampColumnWidth(width);
+        }
+    }
+
+    return {
+        query: typeof query === 'string' ? query : '',
+        columnSelections: serializedSelections,
+        sortColumnKey: typeof sortColumnKey === 'string' ? sortColumnKey : '',
+        sortDirection: sortDirection === 'ascending' || sortDirection === 'descending' ? sortDirection : 'none',
+        columnWidths: serializedWidths,
+    };
+}
+
+function deserializeViewState(raw, columns = []) {
+    const validColumnKeys = new Set(columns.map((c) => c.key));
+    const result = {
+        query: '',
+        columnSelections: new Map(),
+        sortColumnKey: '',
+        sortDirection: 'none',
+        columnWidths: new Map(),
+    };
+
+    if (!raw || typeof raw !== 'object') {
+        return result;
+    }
+
+    if (typeof raw.query === 'string') {
+        result.query = raw.query;
+    }
+
+    if (raw.columnSelections && typeof raw.columnSelections === 'object') {
+        for (const [key, values] of Object.entries(raw.columnSelections)) {
+            if (validColumnKeys.has(key) && Array.isArray(values)) {
+                result.columnSelections.set(key, new Set(values.map(String)));
+            }
+        }
+    }
+
+    if (
+        typeof raw.sortColumnKey === 'string' &&
+        validColumnKeys.has(raw.sortColumnKey) &&
+        (raw.sortDirection === 'ascending' || raw.sortDirection === 'descending')
+    ) {
+        result.sortColumnKey = raw.sortColumnKey;
+        result.sortDirection = raw.sortDirection;
+    }
+
+    if (raw.columnWidths && typeof raw.columnWidths === 'object') {
+        for (const [key, width] of Object.entries(raw.columnWidths)) {
+            if (validColumnKeys.has(key) && typeof width === 'number' && Number.isFinite(width)) {
+                result.columnWidths.set(key, clampColumnWidth(width));
+            }
+        }
+    }
+
+    return result;
+}
+
 const api = {
     clampColumnWidth,
     clearColumnSelection,
+    deserializeViewState,
     filterRows,
     getDistinctValues,
     getVirtualWindow,
     nextSortDirection,
     selectAllMatchingValues,
+    serializeViewState,
     sortRows,
 };
 

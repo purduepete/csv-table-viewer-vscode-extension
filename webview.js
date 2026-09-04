@@ -73,7 +73,6 @@ function getWebviewHtml(webview, extensionUri) {
                 </div>
             </footer>
         </section>
-        <footer id="status" class="status" aria-live="polite">Loading...</footer>
     </main>
     <script nonce="${nonce}" src="${modelUri}"></script>
     <script nonce="${nonce}" src="${scriptUri}"></script>

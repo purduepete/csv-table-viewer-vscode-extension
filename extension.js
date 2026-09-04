@@ -56,11 +56,13 @@ class CsvTableEditorProvider {
                 const bytes = await vscode.workspace.fs.readFile(document.uri);
                 const extension = path.extname(document.uri.path);
                 const parsed = readCsvBytes(bytes, extension);
+                const viewState = this.context.workspaceState.get(`csvViewState:${document.uri.toString()}`);
                 await panel.webview.postMessage({
                     type: 'data',
                     payload: {
                         fileName: path.basename(document.uri.path),
                         ...parsed,
+                        viewState,
                     },
                 });
             } catch (error) {
@@ -74,6 +76,13 @@ class CsvTableEditorProvider {
         const messageDisposable = panel.webview.onDidReceiveMessage(async (message) => {
             if (message?.type === 'ready' || message?.type === 'refresh') {
                 await sendData();
+            } else if (message?.type === 'saveViewState') {
+                const key = `csvViewState:${document.uri.toString()}`;
+                if (message.viewState) {
+                    await this.context.workspaceState.update(key, message.viewState);
+                } else {
+                    await this.context.workspaceState.update(key, undefined);
+                }
             } else if (message?.type === 'openText') {
                 await vscode.commands.executeCommand('vscode.openWith', document.uri, 'default');
             }

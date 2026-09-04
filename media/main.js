@@ -35,7 +35,6 @@
     const headerRow = document.getElementById('header-row');
     const tableBody = document.getElementById('table-body');
     const emptyState = document.getElementById('empty-state');
-    const status = document.getElementById('status');
     const columnFilterMenu = document.getElementById('column-filter-menu');
     const columnFilterTitle = document.getElementById('column-filter-title');
     const closeColumnFilter = document.getElementById('close-column-filter');
@@ -103,20 +102,41 @@
         }
     }
 
-    function applyView({ resetScroll = true } = {}) {
+    function saveViewState() {
+        if (!state.data) return;
+        const sortColumnKey = state.sortColumn >= 0 ? state.data.columns[state.sortColumn]?.key || '' : '';
+        const serialized = model.serializeViewState({
+            query: state.query,
+            columnSelections: state.columnSelections,
+            sortColumnKey,
+            sortDirection: state.sortDirection,
+            columnWidths: state.columnWidths,
+        });
+        vscode.postMessage({
+            type: 'saveViewState',
+            viewState: serialized,
+        });
+    }
+
+    function applyView({ resetScroll = true, shouldSave = true } = {}) {
         if (!state.data) return;
         const columnSelections = state.data.columns.map((column) => state.columnSelections.get(column.key) ?? null);
         const filtered = model.filterRows(state.data.rows, state.query, columnSelections);
         state.visibleRows = model.sortRows(filtered, state.sortColumn, state.sortDirection);
         const hasColumnFilters = state.columnSelections.size > 0;
-        clearFilter.disabled = !state.query && !hasColumnFilters;
+        const isFiltered = Boolean(state.query.trim() || hasColumnFilters);
+        clearFilter.disabled = !isFiltered;
         if (resetScroll) scroll.scrollTop = 0;
         const count = state.visibleRows.length;
-        status.textContent = `${count.toLocaleString()} of ${state.data.rows.length.toLocaleString()} rows`;
+        const totalRows = state.data.rows.length;
+        const rowSummary = isFiltered
+            ? `${count.toLocaleString()} of ${totalRows.toLocaleString()} rows`
+            : `${totalRows.toLocaleString()} rows`;
+        metadata.textContent = `${rowSummary} · ${state.data.columns.length} columns · ${state.data.encoding}`;
         if (count === 0) {
             tableBody.replaceChildren();
             setEmpty(
-                state.query || hasColumnFilters
+                isFiltered
                     ? 'No rows match the active filters.'
                     : 'This file has headers but no data rows.',
             );
@@ -124,6 +144,9 @@
             emptyState.hidden = true;
             table.hidden = false;
             renderWindow();
+        }
+        if (shouldSave) {
+            saveViewState();
         }
     }
 
@@ -180,14 +203,21 @@
         handle.addEventListener('pointermove', (event) => {
             if (event.pointerId === pointerId) setColumnWidth(index, startWidth + event.clientX - startX);
         });
-        handle.addEventListener('pointerup', endResize);
-        handle.addEventListener('pointercancel', endResize);
+        handle.addEventListener('pointerup', () => {
+            endResize();
+            saveViewState();
+        });
+        handle.addEventListener('pointercancel', () => {
+            endResize();
+            saveViewState();
+        });
         handle.addEventListener('click', (event) => event.stopPropagation());
         handle.addEventListener('dblclick', (event) => {
             event.preventDefault();
             event.stopPropagation();
             state.columnWidths.delete(column.key);
             renderColumnWidths();
+            saveViewState();
         });
         handle.addEventListener('keydown', (event) => {
             if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -195,6 +225,7 @@
             event.stopPropagation();
             const direction = event.key === 'ArrowLeft' ? -1 : 1;
             setColumnWidth(index, columnWidth(column) + direction * COLUMN_RESIZE_STEP);
+            saveViewState();
         });
         header.append(handle);
     }
@@ -423,13 +454,34 @@
 
     function showData(payload) {
         closeColumnFilterMenu({ restoreFocus: false });
-        const priorColumnKey = state.data?.columns[state.sortColumn]?.key;
+        if (payload.viewState) {
+            const restored = model.deserializeViewState(payload.viewState, payload.columns);
+            state.query = restored.query;
+            state.columnSelections = restored.columnSelections;
+            state.columnWidths = restored.columnWidths;
+            if (restored.sortColumnKey) {
+                const sortIndex = payload.columns.findIndex((column) => column.key === restored.sortColumnKey);
+                if (sortIndex >= 0) {
+                    state.sortColumn = sortIndex;
+                    state.sortDirection = restored.sortDirection;
+                } else {
+                    state.sortColumn = -1;
+                    state.sortDirection = 'none';
+                }
+            } else {
+                state.sortColumn = -1;
+                state.sortDirection = 'none';
+            }
+        } else {
+            const priorColumnKey = state.data?.columns[state.sortColumn]?.key;
+            reconcileColumnSelections(payload);
+            state.sortColumn = priorColumnKey ? payload.columns.findIndex((column) => column.key === priorColumnKey) : -1;
+            if (state.sortColumn < 0) state.sortDirection = 'none';
+        }
         state.data = payload;
         reconcileColumnSelections(payload);
-        state.sortColumn = priorColumnKey ? payload.columns.findIndex((column) => column.key === priorColumnKey) : -1;
-        if (state.sortColumn < 0) state.sortDirection = 'none';
+        filter.value = state.query;
         fileName.textContent = payload.fileName;
-        metadata.textContent = `${payload.rows.length.toLocaleString()} rows · ${payload.columns.length} columns · ${payload.encoding}`;
         let message = '';
         if (payload.truncated)
             message = 'Preview limited to the first 50,000 rows. Filtering and sorting apply to this preview.';
@@ -439,7 +491,7 @@
             message = `${payload.warnings.length} parse warning${payload.warnings.length === 1 ? '' : 's'} detected.`;
         setNotice(message, payload.warnings.length ? 'warning' : 'info');
         renderHeaders();
-        applyView({ resetScroll: false });
+        applyView({ resetScroll: false, shouldSave: false });
         app.setAttribute('aria-busy', 'false');
     }
 
@@ -470,7 +522,6 @@
         const message = event.data;
         if (message.type === 'loading') {
             app.setAttribute('aria-busy', 'true');
-            status.textContent = 'Loading...';
         } else if (message.type === 'data') {
             showData(message.payload);
         } else if (message.type === 'externalChange') {
@@ -483,7 +534,6 @@
                     ? 'This file is too large for table preview.'
                     : 'The table could not be loaded.',
             );
-            status.textContent = 'Not loaded';
             app.setAttribute('aria-busy', 'false');
         }
     });

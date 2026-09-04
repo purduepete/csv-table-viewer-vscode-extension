@@ -5,11 +5,13 @@ const test = require('node:test');
 const {
     clampColumnWidth,
     clearColumnSelection,
+    deserializeViewState,
     filterRows,
     getDistinctValues,
     getVirtualWindow,
     nextSortDirection,
     selectAllMatchingValues,
+    serializeViewState,
     sortRows,
 } = require('../table-model');
 
@@ -114,4 +116,79 @@ test('calculates bounded virtual windows', () => {
     });
     assert.equal(end.end, 1000);
     assert.equal(end.bottomHeight, 0);
+});
+
+test('serializes and deserializes viewState round-trip', () => {
+    const columns = [
+        { key: 'col_0', label: 'Name' },
+        { key: 'col_1', label: 'Age' },
+    ];
+    const original = {
+        query: 'Alice',
+        columnSelections: new Map([
+            ['col_0', new Set(['Alice', 'Alicia'])],
+            ['col_1', new Set()],
+        ]),
+        sortColumnKey: 'col_0',
+        sortDirection: 'descending',
+        columnWidths: new Map([
+            ['col_0', 280],
+            ['col_1', 120],
+        ]),
+    };
+
+    const serialized = serializeViewState(original);
+    assert.deepEqual(serialized, {
+        query: 'Alice',
+        columnSelections: {
+            col_0: ['Alice', 'Alicia'],
+        },
+        sortColumnKey: 'col_0',
+        sortDirection: 'descending',
+        columnWidths: {
+            col_0: 280,
+            col_1: 120,
+        },
+    });
+
+    const deserialized = deserializeViewState(serialized, columns);
+    assert.equal(deserialized.query, 'Alice');
+    assert.deepEqual([...deserialized.columnSelections.get('col_0')], ['Alice', 'Alicia']);
+    assert.equal(deserialized.columnSelections.has('col_1'), false);
+    assert.equal(deserialized.sortColumnKey, 'col_0');
+    assert.equal(deserialized.sortDirection, 'descending');
+    assert.equal(deserialized.columnWidths.get('col_0'), 280);
+    assert.equal(deserialized.columnWidths.get('col_1'), 120);
+});
+
+test('deserializes gracefully when columns are missing or malformed', () => {
+    const columns = [{ key: 'col_0', label: 'Name' }];
+    const malformed = {
+        query: 123,
+        columnSelections: {
+            col_0: ['Alice'],
+            deleted_col: ['Bob'],
+        },
+        sortColumnKey: 'deleted_col',
+        sortDirection: 'invalid',
+        columnWidths: {
+            col_0: 'wide',
+            deleted_col: 300,
+        },
+    };
+
+    const deserialized = deserializeViewState(malformed, columns);
+    assert.equal(deserialized.query, '');
+    assert.deepEqual([...deserialized.columnSelections.get('col_0')], ['Alice']);
+    assert.equal(deserialized.columnSelections.has('deleted_col'), false);
+    assert.equal(deserialized.sortColumnKey, '');
+    assert.equal(deserialized.sortDirection, 'none');
+    assert.equal(deserialized.columnWidths.size, 0);
+
+    const empty = deserializeViewState(null, columns);
+    assert.equal(empty.query, '');
+    assert.equal(empty.columnSelections.size, 0);
+    assert.equal(empty.sortColumnKey, '');
+    assert.equal(empty.sortDirection, 'none');
+    assert.equal(empty.columnWidths.size, 0);
 });
